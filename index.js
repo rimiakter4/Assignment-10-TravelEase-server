@@ -119,6 +119,7 @@ app.post
 app.get("/my-vehicles", async (req, res) => {
   const email = req.query.email; 
   if (!email) {
+
     return res.status(400).send({ message: "Email is required" });
 
     
@@ -127,10 +128,6 @@ app.get("/my-vehicles", async (req, res) => {
   const vehicles = await Vehiclecollections.find({ userEmail: email }).toArray();
   res.send(vehicles);
 });
-
-
-
-
 
 
 app.patch('/all-vehicles/:id',async(req,res)=>{
@@ -155,15 +152,7 @@ app.patch('/all-vehicles/:id',async(req,res)=>{
             res.send(result)
 });
 
-       
-app.delete('/all-vehicles/:id',async(req,res)=>{
-            const id=req.params.id
-            const qurey={_id: new ObjectId(id)}
-            const result=await Vehiclecollections.deleteOne(qurey)
-            res.send(result)
-        })    
-
-// user api s 
+ 
  app.post('/users',async(req,res)=>{
             const newuser=req.body
             const email=newuser.email
@@ -180,6 +169,14 @@ app.delete('/all-vehicles/:id',async(req,res)=>{
          
         })
  
+      
+app.delete('/all-vehicles/:id',async(req,res)=>{
+            const id=req.params.id
+            const qurey={_id: new ObjectId(id)}
+            const result=await Vehiclecollections.deleteOne(qurey)
+            res.send(result)
+        })    
+
 
 
 
