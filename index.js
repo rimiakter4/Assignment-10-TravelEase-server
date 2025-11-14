@@ -116,7 +116,6 @@ app.get('/all-vehicles',async(req,res)=>{
 app.post
 
 
-
 app.get("/my-vehicles", async (req, res) => {
   const email = req.query.email; 
   if (!email) {
@@ -128,6 +127,7 @@ app.get("/my-vehicles", async (req, res) => {
   const vehicles = await Vehiclecollections.find({ userEmail: email }).toArray();
   res.send(vehicles);
 });
+
 
 app.patch('/all-vehicles/:id',async(req,res)=>{
             const id=req.params.id
