@@ -37,15 +37,49 @@ async function run() {
      const userscollection=db.collection('users')
         const bookingsCollection = db.collection("bookings");
 // bokking collection
-
-
 app.post("/bookings", async (req, res) => {
-      const booking = req.body;
-      const result = await bookingsCollection.insertOne(booking);
-      res.send(result); 
-    });
-    
+  const { vehicleId, userEmail, date } = req.body;
+  const vehicle = await Vehiclecollections.findOne(
+    { _id: new ObjectId(vehicleId) }
+  );
+  if (!vehicle) {
+    return res.status(404).send({ message: "Vehicle not found" });
+  }
+  const bookingData = {
+    vehicleId,
+    userEmail,
+    date,
+    status: "Pending",
+    vehicleName: vehicle.vehicleName,
+    coverImage: vehicle.coverImage,
+    pricePerDay: vehicle.pricePerDay,
+    category: vehicle.category,
+    date: new Date().toISOString(),
+    location: vehicle.location,
+  };
 
+  const result = await bookingsCollection.insertOne(bookingData);
+  res.send(result);
+});
+
+
+app.delete('/bookings/:id',async(req,res)=>{
+            const id=req.params.id
+            const qurey={_id: new ObjectId(id)}
+            const result=await bookingsCollection.deleteOne(qurey)
+            res.send(result)
+        })    
+
+
+
+app.get('/bookings',async(req,res)=>{
+
+    const cursor=bookingsCollection.find().sort({pricePerDay:1})
+            const result=await cursor.toArray()
+            res.send(result)
+})
+
+// vehicles
 app.post('/vehicles', async (req, res) => {
   const newvehicle = req.body;
   console.log("New Vehicle Received:", newvehicle);
@@ -65,19 +99,21 @@ app.get('/vehicles',async(req,res)=>{
             res.send(result)
 })
 
+
 app.get('/all-vehicles',async(req,res)=>{
   const cursor=Vehiclecollections.find().sort({created_at:-1})
   const result=await cursor.toArray()
   res.send(result)
 })
 
-
- app.get('/all-vehicles/:id',async(req,res)=>{
+   app.get('/all-vehicles/:id',async(req,res)=>{
             const id=req.params.id
             const qurey={_id : new ObjectId(id)}
             const result=await Vehiclecollections.findOne(qurey)
             res.send(result)
         })
+
+app.post
 
 
 
@@ -159,3 +195,4 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
+
