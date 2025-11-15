@@ -7,11 +7,24 @@ require('dotenv').config();
 
 
 app.use(cors({
-  origin: "http://localhost:5173",  
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  origin: function(origin, callback){
+    if(!origin) return callback(null, true); // for Postman or server-side requests
+    if(!allowedOrigins.includes(origin)){
+      const msg = 'CORS not allowed from this origin';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"]
 }));
+
+
+const allowedOrigins = [
+  "http://localhost:5173",                        
+  "https://assignment-10-travelease.web.app"     
+];
 
 
 app.use(express.json())
@@ -151,6 +164,13 @@ app.patch('/all-vehicles/:id',async(req,res)=>{
             const result=await Vehiclecollections.updateOne(qurey,update)
             res.send(result)
 });
+      
+app.delete('/all-vehicles/:id',async(req,res)=>{
+            const id=req.params.id
+            const qurey={_id: new ObjectId(id)}
+            const result=await Vehiclecollections.deleteOne(qurey)
+            res.send(result)
+        })    
 
  
  app.post('/users',async(req,res)=>{
@@ -169,13 +189,6 @@ app.patch('/all-vehicles/:id',async(req,res)=>{
          
         })
  
-      
-app.delete('/all-vehicles/:id',async(req,res)=>{
-            const id=req.params.id
-            const qurey={_id: new ObjectId(id)}
-            const result=await Vehiclecollections.deleteOne(qurey)
-            res.send(result)
-        })    
 
 
 
@@ -183,7 +196,7 @@ app.delete('/all-vehicles/:id',async(req,res)=>{
 
 
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
 
