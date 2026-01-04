@@ -1,7 +1,7 @@
 const express =require("express")
 const app =express()
 const cors=require("cors")
-const port =process.env.PORT||3000
+const port =process.env.PORT||5174
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
@@ -44,7 +44,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
 
-    await client.connect();
+    // await client.connect();
     const db=client.db("travelease_db")
   const Vehiclecollections=db.collection("vehicles")
      const userscollection=db.collection('users')
@@ -85,14 +85,35 @@ app.delete('/bookings/:id',async(req,res)=>{
 
 
 
-app.get('/bookings',async(req,res)=>{
+// app.get('/bookings',async(req,res)=>{
 
-    const cursor=bookingsCollection.find().sort({pricePerDay:1})
-            const result=await cursor.toArray()
-            res.send(result)
-})
+
+//     const cursor=bookingsCollection.find().sort({pricePerDay:1})
+//             const result=await cursor.toArray()
+//             res.send(result)
+// })
 
 // vehicles
+
+app.get('/bookings', async (req, res) => {
+    try {
+        const email = req.query.email; // Frontend theke ?email=... pathano hobe
+        let query = {};
+        
+        if (email) {
+            // Sudhu login kora user-er email-er sathe match korbe
+            query = { userEmail: email }; 
+        }
+
+        const cursor = bookingsCollection.find(query);
+        const result = await cursor.toArray();
+        res.send(result);
+    } catch (error) {
+        res.status(500).send({ message: "Error fetching bookings" });
+    }
+});
+
+
 app.post('/vehicles', async (req, res) => {
   const newvehicle = req.body;
   console.log("New Vehicle Received:", newvehicle);
@@ -107,7 +128,7 @@ app.post('/vehicles', async (req, res) => {
 });
 
 app.get('/vehicles',async(req,res)=>{
-    const cursor=Vehiclecollections.find().sort({created_at:-1}).limit(6)
+    const cursor=Vehiclecollections.find().sort({created_at:-1}).limit(10)
             const result=await cursor.toArray()
             res.send(result)
 })
@@ -126,7 +147,50 @@ app.get('/all-vehicles',async(req,res)=>{
             res.send(result)
         })
 
-app.post
+
+
+app.get("/all-vehicles", async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      category,
+      location,
+      sort
+    } = req.query;
+
+    const query = {};
+
+    if (category) query.category = category;
+    if (location) query.location = location;
+
+    let sortOption = {};
+    if (sort === "low") sortOption.pricePerDay = 1;
+    if (sort === "high") sortOption.pricePerDay = -1;
+
+    const skip = (page - 1) * limit;
+
+    const vehicles = await Vehicle.find(query)
+      .sort(sortOption)
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await Vehicle.countDocuments(query);
+
+    res.send({
+      vehicles,
+      totalPages: Math.ceil(total / limit),
+      currentPage: Number(page)
+    });
+  } catch (err) {
+    res.status(500).send({ message: "Server Error" });
+  }
+});
+
+
+
+
+// app.post
 
 
 app.get("/my-vehicles", async (req, res) => {
@@ -189,14 +253,39 @@ app.delete('/all-vehicles/:id',async(req,res)=>{
          
         })
  
+// Sudhu login kora user-er detail booking list
+// index.js (Backend)
 
+// index.js (Backend)
+app.get('/user-stats/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    
+    // 1. Ei nirdishto user-er total koyti booking ache
+    const totalBookings = await bookingsCollection.countDocuments({ userEmail: email });
+    
+    // 2. Active rentals (status jader Pending ba Confirmed)
+    const activeRentals = await bookingsCollection.countDocuments({ 
+        userEmail: email, 
+        status: { $in: ["Pending", "Confirmed"] } 
+    });
 
+    // 3. Total koto taka spent hoyeche (pricePerDay er jogfol)
+    const userBookings = await bookingsCollection.find({ userEmail: email }).toArray();
+    const totalSpent = userBookings.reduce((sum, item) => {
+        return sum + (parseFloat(item.pricePerDay) || 0);
+    }, 0);
 
-
-
-
-
-    // await client.db("admin").command({ ping: 1 });
+    res.send({ 
+      totalBookings, 
+      activeRentals, 
+      totalSpent: totalSpent.toFixed(2) 
+    });
+  } catch (error) {
+    res.status(500).send({ message: "Error fetching stats" });
+  }
+});
+ 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
 
